@@ -156,7 +156,7 @@ def main():
         print("No valid URLs detected.")
         return
 
-    download_dir = "Movies"
+    download_dir = "/content/Movies"
     os.makedirs(download_dir, exist_ok=True)
 
     if not shutil.which("aria2c"):
@@ -178,7 +178,7 @@ def main():
     print(f"\\nStarting download process for {len(urls)} target(s)...\\n")
 
     # Limit concurrent downloads to prevent overloading bandwidth
-    max_workers = min(len(urls), 5)
+    max_workers = min(len(urls), 10)
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = [
             executor.submit(
