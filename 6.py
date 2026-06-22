@@ -23,13 +23,14 @@ else:
 
         print(f"\nProcessing: {filename}")
 
-        # Execute the ffmpeg command as a list to run natively in Python
+        # FFmpeg command (NVIDIA GPU)
         cmd = [
             "ffmpeg", "-y",
             "-hwaccel", "cuda",
             "-i", video,
             "-i", WATERMARK,
-            "-filter_complex", "[1]scale=iw*0.15:-1,format=rgba,colorchannelmixer=aa=1[logo];[0][logo]overlay=15:15",
+            "-filter_complex",
+            "[1]scale=iw*0.15:-1,format=rgba,colorchannelmixer=aa=1[logo];[0][logo]overlay=15:15",
             "-c:v", "h264_nvenc",
             "-preset", "p1",
             "-cq", "23",
@@ -37,28 +38,46 @@ else:
             "-c:a", "copy",
             output_file
         ]
-        
-        #cmd = [
-         #   "ffmpeg", "-y",
-        #    "-i", video,
-        #    "-i", WATERMARK,
-        #    "-filter_complex",
-        #    "[1]scale=iw*0.15:-1,format=rgba,colorchannelmixer=aa=1[logo];[0][logo]overlay=15:15",
-        #    "-c:v", "libx264",
-        #    "-preset", "ultrafast",
-        #    "-crf", "23",
-        #    "-c:a", "copy",
-        #    output_file
-       # ]
+
+        # CPU version (uncomment if needed)
+        # cmd = [
+        #     "ffmpeg", "-y",
+        #     "-i", video,
+        #     "-i", WATERMARK,
+        #     "-filter_complex",
+        #     "[1]scale=iw*0.15:-1,format=rgba,colorchannelmixer=aa=1[logo];[0][logo]overlay=15:15",
+        #     "-c:v", "libx264",
+        #     "-preset", "ultrafast",
+        #     "-crf", "23",
+        #     "-c:a", "copy",
+        #     output_file
+        # ]
 
         try:
             subprocess.run(cmd, check=True)
-            print(f"Finished processing: {filename}")
+
+            # Verify output file exists and is not empty
+            if (
+                os.path.exists(output_file)
+                and os.path.getsize(output_file) > 0
+            ):
+                os.remove(video)
+                print(f"Finished processing: {filename}")
+                print(f"Deleted original file: {filename}")
+            else:
+                print(f"Output file missing or empty: {output_file}")
+                print("Original file kept.")
+
         except subprocess.CalledProcessError as e:
             print(f"Error processing '{filename}': {e}")
+            print("Original file kept.")
+
         except FileNotFoundError:
-            print("Error: 'ffmpeg' command was not found. Please ensure it is installed on your system.")
+            print("Error: 'ffmpeg' command was not found.")
             break
 
-    print("\nAll done!")
+        except Exception as e:
+            print(f"Unexpected error while processing '{filename}': {e}")
+            print("Original file kept.")
 
+    print("\nAll done!")
