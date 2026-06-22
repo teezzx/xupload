@@ -5,7 +5,7 @@ import subprocess
 # --- Configuration Settings ---
 INPUT_DIR = "/content/Movies"
 OUTPUT_DIR = "/content/Zipp"
-WATERMARK = "/content/v2.png"
+WATERMARK = "v2.png"
 # ------------------------------
 
 # Ensure the output directory exists
