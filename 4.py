@@ -13,6 +13,7 @@ IS_PUBLIC = 1  # 1 = Public, 0 = Private
 # =======================================================
 
 # Parse the Folder ID input
+# Parse the Folder ID input
 PARSED_FOLDER_ID = None
 if RPM_FOLDER_ID and str(RPM_FOLDER_ID).strip().lower() != "none":
     try:
@@ -61,7 +62,6 @@ def upload_single_file(file_path, upload_url, current_idx, total_files):
             result = response.json()
 
             if result.get("status") == 200:
-                # Success
                 file_code = (
                     result["files"][0]["filecode"]
                     if "files" in result
@@ -70,7 +70,6 @@ def upload_single_file(file_path, upload_url, current_idx, total_files):
                 print(f"   ✅ Success! Code: {file_code}")
                 return True
             else:
-                # API returned an error
                 print(f"   ❌ Failed: {result.get('msg')}")
                 return False
 
@@ -91,7 +90,7 @@ def batch_upload():
         f
         for f in all_items
         if os.path.isfile(os.path.join(SOURCE_DIRECTORY, f))
-        and not f.startswith(".")  # Skip .ipynb_checkpoints
+        and not f.startswith(".")  # Skip .ipynb_checkpoints, system files, etc.
     ]
 
     total_files = len(file_list)
@@ -106,6 +105,7 @@ def batch_upload():
 
     # 3. Iterate and Upload
     success_count = 0
+    deleted_count = 0
 
     for index, filename in enumerate(file_list, start=1):
         full_path = os.path.join(SOURCE_DIRECTORY, filename)
@@ -120,16 +120,27 @@ def batch_upload():
             )
             if success:
                 success_count += 1
+                # Step C: Attempt to delete the file locally if upload was successful
+                try:
+                    os.remove(full_path)
+                    print(f"   🗑️ Deleted local file: {filename}")
+                    deleted_count += 1
+                except Exception as e:
+                    print(f"   ⚠️ Could not delete local file {filename}: {str(e)}")
+            else:
+                print(f"   ℹ️ Keeping local file: {filename} (Upload failed)")
+        else:
+            print(f"   ℹ️ Keeping local file: {filename} (Could not obtain upload URL)")
 
         # Optional: Small delay to be polite to the API
         time.sleep(1)
 
     print("=========================================")
     print(
-        f"🏁 Batch Complete. {success_count}/{total_files} files uploaded successfully."
+        f"🏁 Batch Complete. {success_count}/{total_files} files uploaded. "
+        f"{deleted_count} local files removed."
     )
 
 
 if __name__ == "__main__":
     batch_upload()
-
